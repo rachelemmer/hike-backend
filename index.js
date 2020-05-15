@@ -6,9 +6,11 @@ const knex = require("knex")
 const config = require("./knexfile")[process.env.NODE_ENV || "development"]
 const database = knex(config)
 const jwt = require("jsonwebtoken")
+const cors = require("cors")
 require("dotenv").config()
 
 app.use(bodyParser.json())
+app.use(cors())
 
 app.post("/users", (request, response) => {
     const { username, password } = request.body
@@ -79,4 +81,4 @@ async function authenticate(request, response, next){
     next()
 }
 
-app.listen(process.env.PORT || 3000)
+app.listen(process.env.PORT || 4000)

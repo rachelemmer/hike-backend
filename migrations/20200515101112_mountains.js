@@ -3,8 +3,8 @@ exports.up = function(knex) {
   return knex.schema.createTable("mountain", mountain => {
       mountain.increments()
       mountain.string("name")
-      mountain.decimal("latitude")
-      mountain.decimal("longitude")
+      mountain.float("latitude")
+      mountain.float("longitude")
   })
 };
 

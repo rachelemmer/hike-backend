@@ -48,17 +48,18 @@ app.post("/login", async (request, response) => {
     response.json({ token })
 })
 
-app.get("/secrets", authenticate, (request, response) => {
-    response.json({
-        secretInfo: "Here you go"
+app.get("/mountain", async (request, response) => {
+    database("mountain").select()
+        .then(mountains => {
+        response.json({mountains})
     })
 })
 
-app.get("/other-secrets", authenticate, (request, response) => {
-    response.json({
-        secretInfo: "Here you also go"
-    })
-})
+// app.get("/other-secrets", authenticate, (request, response) => {
+//     response.json({
+//         secretInfo: "Here you also go"
+//     })
+// })
 
 async function authenticate(request, response, next){
     const token = request.headers.authorization.split(" ")[1]

@@ -7,10 +7,40 @@ const config = require("./knexfile")[process.env.NODE_ENV || "development"]
 const database = knex(config)
 const jwt = require("jsonwebtoken")
 const cors = require("cors")
+const { Model } = require("objection")
 require("dotenv").config()
 
 app.use(bodyParser.json())
 app.use(cors())
+
+Model.knex(database)
+
+class Mountain extends Model {
+    static get tableName() {
+        return 'mountain';
+    }
+}
+
+class User extends Model {
+    static get tableName() {
+        return 'user';
+    }
+    static relationMappings = {
+        mountains: {
+            modelClass: Mountain,
+            relation: Model.ManyToManyRelation,
+            join: {
+                from: "user.id",
+                through: {
+                    from: "hike.user_id",
+                    to: "hike.mountain_id",
+                    extra: ["title", "description", "image"]
+                },
+                to: "mountain.id"
+            }
+        }
+    }
+}
 
 app.post("/users", (request, response) => {
     const { username, password } = request.body
@@ -45,7 +75,7 @@ app.post("/login", async (request, response) => {
         username: foundUser.username
     }, process.env.SECRET)
     
-    response.json({ token })
+    response.json({ token, foundUser })
 })
 
 app.get("/mountain", async (request, response) => {
@@ -55,31 +85,32 @@ app.get("/mountain", async (request, response) => {
     })
 })
 
-// app.get("/other-secrets", authenticate, (request, response) => {
-//     response.json({
-//         secretInfo: "Here you also go"
-//     })
-// })
+app.post("/hike", (request, response) => {
+    const { title, image, description, user_id, mountain_id } = request.body
+    database('hike')
+    .insert({title, image, description, user_id, mountain_id})
+    .then(response.sendStatus(201))
+})
 
-async function authenticate(request, response, next){
-    const token = request.headers.authorization.split(" ")[1]
-    if (!token){
-        response.sendStatus(401)
-    }
-    let id
-    try {
-        id = jwt.verify(token, process.env.SECRET).id
-    } catch(error){
-        response.sendStatus(403)
-    }
-    const user = await database("user")
-        .select()
-        .where("id", id)
-        .first()
+// async function authenticate(request, response, next){
+//     const token = request.headers.authorization.split(" ")[1]
+//     if (!token){
+//         response.sendStatus(401)
+//     }
+//     let id
+//     try {
+//         id = jwt.verify(token, process.env.SECRET).id
+//     } catch(error){
+//         response.sendStatus(403)
+//     }
+//     const user = await database("user")
+//         .select()
+//         .where("id", id)
+//         .first()
 
-    request.user = user
+//     request.user = user
     
-    next()
-}
+//     next()
+// }
 
 app.listen(process.env.PORT || 4000)

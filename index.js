@@ -89,6 +89,14 @@ app.get("/hike", authenticate, (request, response) => {
     })
 })
 
+app.delete("/hike/:id",  (request, response)=> {
+    const hikeId = Number(request.params.id)
+    database('hike')
+    .delete()
+    .where('id', hikeId)
+    .then(response.json({status: 200}))   
+})
+
 app.get("/mountain", (request, response) => {
     database("mountain").select()
         .then(mountains => {
@@ -96,10 +104,5 @@ app.get("/mountain", (request, response) => {
     })
 })
 
-app.delete("./hike", (request, response) => {
-    Hike.query()
-    .delete()
-    .whereExists(Hike.relatedQuery('mountains').where('mountains.latitude', null));
-})
 
 app.listen(process.env.PORT || 4000)

@@ -12,6 +12,11 @@ require("dotenv").config()
 app.use(bodyParser.json())
 app.use(cors())
 
+const User = require("./models/User")
+const Mountain = require("./models/Mountain")
+const Hike = require("./models/Hike")
+
+
 app.post("/users", (request, response) => {
     const { username, password } = request.body
     bcrypt.hash(password, 12).then(hashedPassword => {
@@ -45,19 +50,7 @@ app.post("/login", async (request, response) => {
         username: foundUser.username
     }, process.env.SECRET)
     
-    response.json({ token })
-})
-
-app.get("/secrets", authenticate, (request, response) => {
-    response.json({
-        secretInfo: "Here you go"
-    })
-})
-
-app.get("/other-secrets", authenticate, (request, response) => {
-    response.json({
-        secretInfo: "Here you also go"
-    })
+    response.json({ token, foundUser })
 })
 
 async function authenticate(request, response, next){
@@ -75,10 +68,38 @@ async function authenticate(request, response, next){
         .select()
         .where("id", id)
         .first()
-
     request.user = user
+    
     
     next()
 }
+
+app.post("/hike", (request, response) => {
+    const { title, image, description, user_id, mountain_id } = request.body
+    database('hike')
+    .insert({title, image, description, user_id, mountain_id})
+    .then(response.sendStatus(201))
+})
+
+app.get("/hike", authenticate, (request, response) => {
+    Hike.query().withGraphFetched("mountains")
+    .where("user_id", request.user.id)
+    .then(hikes => {
+        response.json({hikes})
+    })
+})
+
+app.get("/mountain", (request, response) => {
+    database("mountain").select()
+        .then(mountains => {
+        response.json({mountains})
+    })
+})
+
+app.delete("./hike", (request, response) => {
+    Hike.query()
+    .delete()
+    .whereExists(Hike.relatedQuery('mountains').where('mountains.latitude', null));
+})
 
 app.listen(process.env.PORT || 4000)
